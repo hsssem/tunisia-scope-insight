@@ -37,7 +37,10 @@ export function computeScore(answers: AnswersMap, sector: string): ScoreResult {
   // Data = D1..D6 (88%), Digital = D7 (12%)
   const dataDims = ["D1", "D2", "D3", "D4", "D5", "D6"];
   const dataWeightSum = dataDims.reduce((s, c) => s + sw[c], 0);
-  const dataMaturity = dataDims.reduce((s, c) => s + (sw[c] / dataWeightSum) * byCode[c].normalized, 0);
+  const dataMaturity = dataDims.reduce(
+    (s, c) => s + (sw[c] / dataWeightSum) * byCode[c].normalized,
+    0,
+  );
   const digitalMaturity = byCode.D7.normalized;
   const level = getMaturityLevel(sgm);
   return { dims, byCode, sgm, dataMaturity, digitalMaturity, level };

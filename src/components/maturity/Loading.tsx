@@ -47,13 +47,24 @@ export function Loading({ onDone }: { onDone: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-center gap-3 text-base font-medium text-white/85"
           >
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-brand text-[10px] text-white">✓</span>
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-brand text-[10px] text-white">
+              ✓
+            </span>
             <span>{m}</span>
             {i === shown - 1 && i < MESSAGES.length - 1 && (
               <span className="ml-1 inline-flex gap-1">
-                <span className="h-1 w-1 animate-bounce rounded-full bg-accent" style={{ animationDelay: "0ms" }} />
-                <span className="h-1 w-1 animate-bounce rounded-full bg-accent" style={{ animationDelay: "150ms" }} />
-                <span className="h-1 w-1 animate-bounce rounded-full bg-accent" style={{ animationDelay: "300ms" }} />
+                <span
+                  className="h-1 w-1 animate-bounce rounded-full bg-accent"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <span
+                  className="h-1 w-1 animate-bounce rounded-full bg-accent"
+                  style={{ animationDelay: "150ms" }}
+                />
+                <span
+                  className="h-1 w-1 animate-bounce rounded-full bg-accent"
+                  style={{ animationDelay: "300ms" }}
+                />
               </span>
             )}
           </motion.div>

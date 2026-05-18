@@ -1,28 +1,39 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Classification, type ClassificationData } from "@/components/maturity/Classification";
 import { Evaluation } from "@/components/maturity/Evaluation";
 import { Loading } from "@/components/maturity/Loading";
 import { Report } from "@/components/maturity/Report";
 import { computeScore, type AnswersMap } from "@/lib/maturity-engine";
+import { saveScoringSubmission } from "@/lib/scoring-submissions";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "EvalitX AI — Évaluation de maturité digitale & data" },
-      { name: "description", content: "Plateforme IA d'évaluation de la maturité digitale et data des entreprises tunisiennes. 7 dimensions, 42 questions, rapport de consulting." },
+      {
+        name: "description",
+        content:
+          "Plateforme IA d'évaluation de la maturité digitale et data des entreprises tunisiennes. 7 dimensions, 42 questions, rapport de consulting.",
+      },
     ],
   }),
   component: App,
 });
 
 type Step = "classification" | "evaluation" | "loading" | "report";
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 function App() {
   const [step, setStep] = useState<Step>("classification");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const savedSubmissionKey = useRef<string | null>(null);
   const [classification, setClassification] = useState<ClassificationData>({
+    companyName: "",
+    contactName: "",
+    contactEmail: "",
     sector: "services",
     size: "",
     itFunction: "",
@@ -31,7 +42,32 @@ function App() {
   });
   const [answers, setAnswers] = useState<AnswersMap>({});
 
-  const score = step === "report" || step === "loading" ? computeScore(answers, classification.sector) : null;
+  const score = useMemo(
+    () =>
+      step === "report" || step === "loading" ? computeScore(answers, classification.sector) : null,
+    [answers, classification.sector, step],
+  );
+
+  useEffect(() => {
+    if (step !== "report" || !score) return;
+
+    const submissionKey = JSON.stringify({
+      companyName: classification.companyName,
+      contactEmail: classification.contactEmail,
+      answers,
+    });
+
+    if (savedSubmissionKey.current === submissionKey) return;
+    savedSubmissionKey.current = submissionKey;
+    setSaveStatus("saving");
+
+    saveScoringSubmission(classification, answers, score)
+      .then(() => setSaveStatus("saved"))
+      .catch((error) => {
+        console.error("Unable to save scoring submission", error);
+        setSaveStatus("error");
+      });
+  }, [answers, classification, score, step]);
 
   const steps: { key: Step; label: string }[] = [
     { key: "classification", label: "Profil" },
@@ -44,24 +80,51 @@ function App() {
     <div className="min-h-screen text-foreground">
       <header className="sticky top-0 z-30 border-b border-white/10 backdrop-blur-xl bg-background/60">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5">
-          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3">
-            <img src={logo} alt="EvalitX AI" className="h-10 w-auto drop-shadow-[0_0_18px_rgba(139,92,246,0.35)]" />
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-3"
+          >
+            <img
+              src={logo}
+              alt="EvalitX AI"
+              className="h-10 w-auto drop-shadow-[0_0_18px_rgba(139,92,246,0.35)]"
+            />
           </motion.div>
           <nav className="hidden items-center gap-2 md:flex">
             {steps.map((s, i) => (
               <div key={s.key} className="flex items-center gap-2">
-                <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  i === activeIdx ? "bg-gradient-brand text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]" :
-                  i < activeIdx ? "bg-white/10 text-white/80" : "text-white/40"
-                }`}>
-                  <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                    i === activeIdx ? "bg-white/25" : i < activeIdx ? "bg-white/20" : "bg-white/10"
-                  }`}>{i + 1}</span>
+                <div
+                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    i === activeIdx
+                      ? "bg-gradient-brand text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]"
+                      : i < activeIdx
+                        ? "bg-white/10 text-white/80"
+                        : "text-white/40"
+                  }`}
+                >
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                      i === activeIdx
+                        ? "bg-white/25"
+                        : i < activeIdx
+                          ? "bg-white/20"
+                          : "bg-white/10"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
                   {s.label}
                 </div>
                 {i < steps.length - 1 && <div className="h-px w-6 bg-white/10" />}
               </div>
             ))}
+            <Link
+              to="/backoffice"
+              className="ml-2 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-white/55 transition hover:bg-white/10 hover:text-white/85"
+            >
+              Backoffice
+            </Link>
           </nav>
         </div>
       </header>
@@ -76,17 +139,33 @@ function App() {
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
             {step === "classification" && (
-              <Classification value={classification} onChange={setClassification} onNext={() => setStep("evaluation")} />
+              <Classification
+                value={classification}
+                onChange={setClassification}
+                onNext={() => setStep("evaluation")}
+              />
             )}
             {step === "evaluation" && (
-              <Evaluation answers={answers} setAnswers={setAnswers} onComplete={() => setStep("loading")} />
+              <Evaluation
+                answers={answers}
+                setAnswers={setAnswers}
+                onComplete={() => setStep("loading")}
+              />
             )}
             {step === "loading" && <Loading onDone={() => setStep("report")} />}
             {step === "report" && score && (
-              <Report score={score} classification={classification} onRestart={() => {
-                setAnswers({});
-                setStep("classification");
-              }} />
+              <Report
+                score={score}
+                classification={classification}
+                answers={answers}
+                saveStatus={saveStatus}
+                onRestart={() => {
+                  setAnswers({});
+                  setSaveStatus("idle");
+                  savedSubmissionKey.current = null;
+                  setStep("classification");
+                }}
+              />
             )}
           </motion.div>
         </AnimatePresence>

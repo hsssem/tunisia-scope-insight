@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 import { SECTORS, SIZES, IT_FUNCTIONS, REGULATED_DATA, SYSTEMS } from "@/lib/maturity-data";
 
 export interface ClassificationData {
+  companyName: string;
+  contactName: string;
+  contactEmail: string;
   sector: string;
   size: string;
   itFunction: string;
@@ -16,16 +19,23 @@ interface Props {
 }
 
 export function Classification({ value, onChange, onNext }: Props) {
-  const canContinue = value.sector && value.size;
+  const canContinue = value.companyName.trim() && value.sector && value.size;
 
   const toggleMulti = (key: "regulated" | "systems", item: string) => {
     const arr = value[key];
-    onChange({ ...value, [key]: arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item] });
+    onChange({
+      ...value,
+      [key]: arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item],
+    });
   };
 
   return (
     <div className="mx-auto max-w-4xl space-y-10">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center"
+      >
         <div className="inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs font-medium text-white/70">
           <span className="h-1.5 w-1.5 rounded-full bg-accent animate-brand-pulse" />
           Étape 1 sur 3 · Profil organisation
@@ -34,16 +44,44 @@ export function Classification({ value, onChange, onNext }: Props) {
           <span className="text-gradient-brand">Profil</span> de votre organisation
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-white/60">
-          Ces informations permettent d'adapter l'évaluation à votre contexte sectoriel et opérationnel.
+          Ces informations permettent d'adapter l'évaluation à votre contexte sectoriel et
+          opérationnel.
         </p>
       </motion.div>
 
       <div className="space-y-5">
+        <Section title="Informations société" required>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <TextField
+              label="Société"
+              value={value.companyName}
+              required
+              onChange={(companyName) => onChange({ ...value, companyName })}
+            />
+            <TextField
+              label="Nom du contact"
+              value={value.contactName}
+              onChange={(contactName) => onChange({ ...value, contactName })}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              value={value.contactEmail}
+              onChange={(contactEmail) => onChange({ ...value, contactEmail })}
+            />
+          </div>
+        </Section>
+
         <Section title="Secteur d'activité principal" required>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {SECTORS.map((s) => (
-              <Radio key={s.id} name="sector" label={s.label} checked={value.sector === s.id}
-                onChange={() => onChange({ ...value, sector: s.id })} />
+              <Radio
+                key={s.id}
+                name="sector"
+                label={s.label}
+                checked={value.sector === s.id}
+                onChange={() => onChange({ ...value, sector: s.id })}
+              />
             ))}
           </div>
         </Section>
@@ -51,8 +89,13 @@ export function Classification({ value, onChange, onNext }: Props) {
         <Section title="Nombre d'employés" required>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {SIZES.map((s) => (
-              <Radio key={s} name="size" label={s} checked={value.size === s}
-                onChange={() => onChange({ ...value, size: s })} />
+              <Radio
+                key={s}
+                name="size"
+                label={s}
+                checked={value.size === s}
+                onChange={() => onChange({ ...value, size: s })}
+              />
             ))}
           </div>
         </Section>
@@ -60,8 +103,13 @@ export function Classification({ value, onChange, onNext }: Props) {
         <Section title="Fonction IT identifiée">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {IT_FUNCTIONS.map((s) => (
-              <Radio key={s} name="it" label={s} checked={value.itFunction === s}
-                onChange={() => onChange({ ...value, itFunction: s })} />
+              <Radio
+                key={s}
+                name="it"
+                label={s}
+                checked={value.itFunction === s}
+                onChange={() => onChange({ ...value, itFunction: s })}
+              />
             ))}
           </div>
         </Section>
@@ -69,8 +117,12 @@ export function Classification({ value, onChange, onNext }: Props) {
         <Section title="Données réglementées">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {REGULATED_DATA.map((s) => (
-              <Check key={s} label={s} checked={value.regulated.includes(s)}
-                onChange={() => toggleMulti("regulated", s)} />
+              <Check
+                key={s}
+                label={s}
+                checked={value.regulated.includes(s)}
+                onChange={() => toggleMulti("regulated", s)}
+              />
             ))}
           </div>
         </Section>
@@ -78,8 +130,12 @@ export function Classification({ value, onChange, onNext }: Props) {
         <Section title="Systèmes d'information utilisés">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {SYSTEMS.map((s) => (
-              <Check key={s} label={s} checked={value.systems.includes(s)}
-                onChange={() => toggleMulti("systems", s)} />
+              <Check
+                key={s}
+                label={s}
+                checked={value.systems.includes(s)}
+                onChange={() => toggleMulti("systems", s)}
+              />
             ))}
           </div>
         </Section>
@@ -101,7 +157,44 @@ export function Classification({ value, onChange, onNext }: Props) {
   );
 }
 
-function Section({ title, required, children }: { title: string; required?: boolean; children: React.ReactNode }) {
+function TextField({
+  label,
+  value,
+  type = "text",
+  required,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  type?: string;
+  required?: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-white/55">
+        {label}
+        {required && <span className="text-accent"> *</span>}
+      </span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 text-sm font-medium text-white outline-none transition focus:border-accent/70 focus:bg-white/[0.06] focus:ring-2 focus:ring-accent/20"
+      />
+    </label>
+  );
+}
+
+function Section({
+  title,
+  required,
+  children,
+}: {
+  title: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -118,17 +211,31 @@ function Section({ title, required, children }: { title: string; required?: bool
   );
 }
 
-function Radio({ name, label, checked, onChange }: { name: string; label: string; checked: boolean; onChange: () => void }) {
+function Radio({
+  name,
+  label,
+  checked,
+  onChange,
+}: {
+  name: string;
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
   return (
-    <label className={`group relative flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm transition-all ${
-      checked
-        ? "border-transparent bg-gradient-brand-soft ring-brand text-white"
-        : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20 hover:bg-white/[0.05]"
-    }`}>
+    <label
+      className={`group relative flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm transition-all ${
+        checked
+          ? "border-transparent bg-gradient-brand-soft ring-brand text-white"
+          : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20 hover:bg-white/[0.05]"
+      }`}
+    >
       <input type="radio" name={name} checked={checked} onChange={onChange} className="sr-only" />
-      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition ${
-        checked ? "border-accent bg-accent" : "border-white/30"
-      }`}>
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition ${
+          checked ? "border-accent bg-accent" : "border-white/30"
+        }`}
+      >
         {checked && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
       </span>
       <span className="font-medium">{label}</span>
@@ -136,18 +243,41 @@ function Radio({ name, label, checked, onChange }: { name: string; label: string
   );
 }
 
-function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+function Check({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
   return (
-    <label className={`group flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm transition-all ${
-      checked
-        ? "border-transparent bg-gradient-brand-soft ring-brand text-white"
-        : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20 hover:bg-white/[0.05]"
-    }`}>
+    <label
+      className={`group flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 text-sm transition-all ${
+        checked
+          ? "border-transparent bg-gradient-brand-soft ring-brand text-white"
+          : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20 hover:bg-white/[0.05]"
+      }`}
+    >
       <input type="checkbox" checked={checked} onChange={onChange} className="sr-only" />
-      <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-md border-2 transition ${
-        checked ? "border-accent bg-accent" : "border-white/30"
-      }`}>
-        {checked && <svg viewBox="0 0 12 12" className="h-3 w-3 text-white"><path d="M2 6l3 3 5-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-md border-2 transition ${
+          checked ? "border-accent bg-accent" : "border-white/30"
+        }`}
+      >
+        {checked && (
+          <svg viewBox="0 0 12 12" className="h-3 w-3 text-white">
+            <path
+              d="M2 6l3 3 5-6"
+              stroke="currentColor"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
       </span>
       <span className="font-medium">{label}</span>
     </label>
