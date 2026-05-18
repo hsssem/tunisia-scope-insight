@@ -58,6 +58,26 @@ NVIDIA_API_KEY=...
 Sans cette cle, l'application continue de fonctionner, mais la section IA affiche
 un message de configuration manquante.
 
+## Deploiement Netlify
+
+Le projet inclut `netlify.toml` pour eviter les erreurs de detection automatique:
+
+- Node.js 22 est force via `.node-version` et `NODE_VERSION`.
+- Netlify publie `dist/client`.
+- Le plugin officiel `@netlify/vite-plugin-tanstack-start` est active pendant les builds Netlify.
+- Les `devDependencies` restent installees pendant le build avec `NPM_FLAGS=--include=dev`.
+
+Dans Netlify, verifier aussi les variables d'environnement:
+
+```bash
+VITE_SUPABASE_URL
+VITE_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+BACKOFFICE_PASSCODE
+NVIDIA_API_KEY
+```
+
 ## Verification avant livraison
 
 ```bash
